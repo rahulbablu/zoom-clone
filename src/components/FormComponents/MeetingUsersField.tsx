@@ -1,5 +1,4 @@
 import { EuiComboBox, EuiFormRow } from "@elastic/eui";
-import React from "react";
 
 function MeetingUsersField({
   label,
@@ -9,6 +8,8 @@ function MeetingUsersField({
   isClearable,
   onChange,
   singleSelection = false,
+  isInvalid,
+  error,
 }: {
   label: string;
   placeholder: string;
@@ -17,9 +18,11 @@ function MeetingUsersField({
   onChange: any;
   selectedOptions: any;
   singleSelection: any;
+  isInvalid: boolean;
+  error: Array<string>
 }) {
   return (
-    <EuiFormRow label={label}>
+    <EuiFormRow label={label} isInvalid={isInvalid} error={error}>
       <EuiComboBox
         options={options}
         onChange={onChange}
@@ -27,6 +30,7 @@ function MeetingUsersField({
         singleSelection={singleSelection}
         placeholder={placeholder}
         isClearable={isClearable}
+        isInvalid={isInvalid}
       />
     </EuiFormRow>
   );

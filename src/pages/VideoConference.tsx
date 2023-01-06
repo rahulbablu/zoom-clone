@@ -1,4 +1,10 @@
-import { EuiFlexGroup, EuiForm, EuiSpacer } from "@elastic/eui";
+import {
+  EuiFlexGroup,
+  EuiForm,
+  EuiFormRow,
+  EuiSpacer,
+  EuiSwitch,
+} from "@elastic/eui";
 import React, { useState } from "react";
 import MeetingNameField from "../components/FormComponents/MeetingNameField";
 import MeetingUsersField from "../components/FormComponents/MeetingUsersField";
@@ -15,18 +21,22 @@ import generateMeetingId from "../utils/generateMeetingId";
 import { useAppSelector } from "../app/hooks";
 import { useNavigate } from "react-router-dom";
 import useToast from "../hooks/useToast";
+import MeetingMaximumUserField from "../components/FormComponents/MeetingMaximumUserField";
 
-function OneOnOneMeeting() {
+function VideoConference() {
   useAuth();
   const navigate = useNavigate();
 
-  const uid = useAppSelector(state=> state.auth.userInfo?.uid);
+  const uid = useAppSelector((state) => state.auth.userInfo?.uid);
   const [users] = useFetchUsers();
   const [meetingName, setMeetingName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Array<UserType>>([]);
   const [startDate, setStartDate] = useState(moment());
-  const  [createToast] = useToast();
-  
+  const [createToast] = useToast();
+
+  const [size, setSize] = useState(1);
+  const [anyoneCanJoin, setAnyoneCanJoin] = useState(false);
+
   const [showErrors, setShowErrors] = useState<{
     meetingName: FieldErrorType;
     meetingUser: FieldErrorType;
@@ -47,46 +57,50 @@ function OneOnOneMeeting() {
 
   const validateForm = () => {
     let errors = false;
-    const clonedShowErrors = {...showErrors}
-    if(!meetingName.length){
+    const clonedShowErrors = { ...showErrors };
+    if (!meetingName.length) {
       clonedShowErrors.meetingName.show = true;
-      clonedShowErrors.meetingName.message = ['Please Enter Meeting Name'];
+      clonedShowErrors.meetingName.message = ["Please Enter Meeting Name"];
       errors = true;
-    }else{
+    } else {
       clonedShowErrors.meetingName.show = false;
       clonedShowErrors.meetingName.message = [];
     }
 
-    if(!selectedUsers.length){
+    if (!selectedUsers.length) {
       clonedShowErrors.meetingUser.show = true;
-      clonedShowErrors.meetingUser.message = ['Please Select A User'];
-    }else{
+      clonedShowErrors.meetingUser.message = ["Please Select A User"];
+    } else {
       clonedShowErrors.meetingUser.show = false;
       clonedShowErrors.meetingUser.message = [];
     }
-    setShowErrors(clonedShowErrors)
+    setShowErrors(clonedShowErrors);
     return errors;
-  }
+  };
 
   const createMeeting = async () => {
-    if(!validateForm()){
-       const meetingId = generateMeetingId();
-       await addDoc(meetingsRef, {
-        createdBy:uid,
+    if (!validateForm()) {
+      const meetingId = generateMeetingId();
+      await addDoc(meetingsRef, {
+        createdBy: uid,
         meetingId,
         meetingName,
-        meetingType:'1-on-1',
-        invitedUsers:[selectedUsers[0]?.uid],
-        meetingDate:startDate.format('L'),
-        maxUsers: 1,
+        meetingType: anyoneCanJoin ? "anyone-can-join" : "video-conference",
+        invitedUsers: anyoneCanJoin
+          ? []
+          : selectedUsers.map((user: UserType) => user.uid),
+        meetingDate: startDate.format("L"),
+        maxUsers: anyoneCanJoin ? 100 : size,
         status: true,
-       });
-       createToast({
-        title: 'One on One Meeting Created Successfully.',
-        type: 'success',
-       })
-       navigate('/');
-     }
+      });
+      createToast({
+        title: anyoneCanJoin
+          ? "Anyone Can Join Meeting Created Successfully."
+          : "Video Conference Created Successfully.",
+        type: "success",
+      });
+      navigate("/");
+    }
   };
 
   return (
@@ -94,6 +108,15 @@ function OneOnOneMeeting() {
       <Header />
       <EuiFlexGroup justifyContent="center" alignItems="center">
         <EuiForm>
+          <EuiFormRow display="columnCompressedSwitch" label="Anyone Can Join.">
+            <EuiSwitch
+              showLabel={false}
+              label="Anyone Can Join"
+              checked={anyoneCanJoin}
+              onChange={(e) => setAnyoneCanJoin(e.target.checked)}
+              compressed
+            />
+          </EuiFormRow>
           <MeetingNameField
             label="Meeting Name"
             placeholder="Meeting Name"
@@ -102,17 +125,23 @@ function OneOnOneMeeting() {
             isInvalid={showErrors.meetingName.show}
             error={showErrors.meetingName.message}
           />
-          <MeetingUsersField
-            label="Invite User"
-            options={users}
-            onChange={onUserChange}
-            selectedOptions={selectedUsers}
-            singleSelection={{ asPlainText: true }}
-            isClearable={false}
-            placeholder="Select a user"
-            isInvalid={showErrors.meetingUser.show}
-            error={showErrors.meetingUser.message}
-          />
+
+          {anyoneCanJoin ? (
+            <MeetingMaximumUserField value={size} setValue={setSize} />
+          ) : (
+            <MeetingUsersField
+              label="Invite User"
+              options={users}
+              onChange={onUserChange}
+              selectedOptions={selectedUsers}
+              singleSelection={false}
+              isClearable={false}
+              placeholder="Select a user"
+              isInvalid={showErrors.meetingUser.show}
+              error={showErrors.meetingUser.message}
+            />
+          )}
+
           <MeetingDateField selected={startDate} setStartDate={setStartDate} />
           <EuiSpacer />
           <CreateMeetingButtons createMeeting={createMeeting} />
@@ -122,4 +151,4 @@ function OneOnOneMeeting() {
   );
 }
 
-export default OneOnOneMeeting;
+export default VideoConference;

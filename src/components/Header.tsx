@@ -13,7 +13,7 @@ import { useDispatch } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAppSelector } from "../app/hooks";
 import { firebaseAuth } from "../utils/FirebaseConfig";
-import { getCreateMeetingBreadCrumbs } from "../utils/breadCrumbs";
+import { getCreateMeetingBreadCrumbs, getMeetingsBreadcrumbs, getMyMeetingsBreadcrumbs, getOneonOneMeetingBreadCrumbs, getVideoConferenceBreadCrumbs } from "../utils/breadCrumbs";
 
 function Header() {
   const navigate = useNavigate();
@@ -30,9 +30,17 @@ function Header() {
   }
 
   useEffect(() => {
+    if (window.innerWidth < 480) setIsResponsive(true);
+  }, []);
+
+  useEffect(() => {
     const {pathname} = location;
     if(pathname === '/create') setBreadCrumbs(getCreateMeetingBreadCrumbs(navigate));
-  }, [location, navigate])
+    else if(pathname === '/create1on1') setBreadCrumbs(getOneonOneMeetingBreadCrumbs(navigate));
+    else if(pathname === '/videoconference') setBreadCrumbs(getVideoConferenceBreadCrumbs(navigate));
+    else if(pathname === '/mymeetings') setBreadCrumbs(getMyMeetingsBreadcrumbs(navigate));
+    else if(pathname === '/meetings') setBreadCrumbs(getMeetingsBreadcrumbs(navigate));
+  }, [location, navigate]);
 
   const section = [
     {
@@ -94,10 +102,6 @@ function Header() {
       ],
     },
   ];
-
-  useEffect(() => {
-    if (window.innerWidth < 480) setIsResponsive(true);
-  }, []);
 
   return (
     <>

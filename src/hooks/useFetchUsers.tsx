@@ -1,10 +1,11 @@
-import { getDocs } from 'firebase/firestore';
+import { getDocs, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react'
 import { useAppSelector } from '../app/hooks';
 import { userRef } from '../utils/FirebaseConfig';
+import { UserType } from '../utils/Types';
 
-function useFetchUsers() {
-  const [users, setUsers] = useState([]);
+export default function useFetchUsers() {
+  const [users, setUsers] = useState<Array<UserType>>([]);
   const uid = useAppSelector(state=> state.auth.userInfo?.uid);
 
   useEffect(() =>{
@@ -12,9 +13,9 @@ function useFetchUsers() {
         const getUsers = async () => {
             const firestoreQuery = query(userRef,where('uid','!=', uid));
             const data = await getDocs(firestoreQuery);
-             const firebaseUsers = [];
+             const firebaseUsers: Array<UserType> = [];
              data.forEach((user) => {
-                const userData = user.data()
+                const userData = user.data() as UserType;
                 firebaseUsers.push({
                     ...userData,
                     label: userData.name,
@@ -27,5 +28,3 @@ function useFetchUsers() {
   },[uid]);
   return [users];
 }
-
-export default useFetchUsers
